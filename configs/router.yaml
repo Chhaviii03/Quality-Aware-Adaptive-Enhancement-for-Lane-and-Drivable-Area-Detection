@@ -1,0 +1,50 @@
+# configs/router.yaml
+# Rule-based router thresholds (v1).
+# All thresholds are on the quality-vector fields output by src/quality/metrics.py.
+# Tune these on the VAL split ONLY.
+
+# Quality-vector field names (must match QualityVector fields in metrics.py)
+# brightness : mean L in LAB (0–255)
+# contrast   : std  L in LAB (0–255)
+# sharpness  : variance of Laplacian on grayscale
+# noise      : Immerkaer fast-noise sigma
+# haze       : mean dark-channel (0–1)
+
+# Decision rules (evaluated top-to-bottom; first match wins)
+# Each rule: list of (field, op, threshold) conditions + action
+rules:
+  - conditions:
+      - [haze, ">", 0.35]
+    action: "dehaze"
+
+  - conditions:
+      - [brightness, "<", 60]
+      - [noise, ">", 15]
+    action: "denoise_clahe"
+
+  - conditions:
+      - [brightness, "<", 80]
+      - [noise, ">", 10]
+    action: "denoise_clahe"
+
+  - conditions:
+      - [brightness, "<", 80]
+    action: "gamma"
+
+  - conditions:
+      - [contrast, "<", 30]
+    action: "clahe"
+
+  - conditions:
+      - [noise, ">", 18]
+    action: "denoise"
+
+# Default action when no rule fires
+default_action: "none"
+
+# Learned router (v2) parameters
+learned:
+  model: "decision_tree"    # "decision_tree" | "logistic_regression"
+  max_depth: 5              # decision tree max depth
+  random_state: 42
+  test_size: 0.20           # fraction of oracle-labelled val frames for router eval

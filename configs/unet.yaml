@@ -1,0 +1,56 @@
+# configs/unet.yaml
+# U-Net from scratch — training and inference settings.
+
+seed: 42
+
+# ── Data ────────────────────────────────────────────────────────────────────
+data_root:     "/data/bdd100k"
+manifest_dir:  "data/manifests"
+image_width:   640
+image_height:  352
+
+# ── Architecture ─────────────────────────────────────────────────────────────
+model: "unet"
+in_channels:   3
+base_width:    32      # doubles at each encoder level → 32,64,128,256
+depth:         4       # number of down/up levels
+out_channels:  2       # channel 0 = drivable area, channel 1 = lane
+
+# ── Loss ─────────────────────────────────────────────────────────────────────
+loss:
+  bce_weight:  0.5
+  dice_weight: 0.5
+  lane_pos_weight: 8.0   # higher positive weight on thin lane channel
+
+# ── Optimiser ────────────────────────────────────────────────────────────────
+optimizer: "adamw"
+lr:         1.0e-3
+weight_decay: 1.0e-4
+scheduler: "cosine"
+epochs:     40
+batch_size: 16
+early_stopping_patience: 7   # epochs without val improvement
+
+# ── Augmentation ─────────────────────────────────────────────────────────────
+augmentation:
+  horizontal_flip: true
+  random_crop:     true
+  crop_scale: [0.8, 1.0]
+  brightness_jitter: 0.15   # ± fraction of full range
+
+# ── Checkpointing ────────────────────────────────────────────────────────────
+checkpoint_dir: "results/checkpoints/unet"
+save_every_n_epochs: 5
+resume_from: null     # set to a .pth path to resume
+
+# ── Preprocessing at inference (set by run_eval.py; do not hand-edit) ────────
+enhancement: "none"   # overridden by --enhancement flag
+
+# ── Debug mode (--debug flag: 20 images, 2 epochs, CPU) ────────────────────
+debug:
+  n_images: 20
+  epochs: 2
+  batch_size: 2
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+log_dir: "results/logs/unet"

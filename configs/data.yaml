@@ -1,0 +1,49 @@
+# configs/data.yaml
+# Paths — override on Colab by pointing at Google Drive mounts.
+
+seed: 42
+
+# Root of the BDD100K download (images100k/images/100k/)
+data_root: "/data/bdd100k"
+
+# Where manifests live (relative to repo root or absolute)
+manifest_dir: "data/manifests"
+
+# Resize target (must be divisible by 32 for U-Net / SegFormer)
+image_width:  640
+image_height: 352
+
+# Lane mask rendering width in pixels
+lane_mask_width: 8
+
+# Subset sizes
+n_train: 4200
+n_val:   900
+n_test:  900
+
+# Conditions and their balance fractions (must sum to 1.0)
+conditions:
+  day_clear: 0.333
+  night:     0.333
+  rain:      0.334
+
+# Synthetic degradation output root (saved alongside originals)
+degraded_root: "/data/bdd100k_degraded"
+
+# Synthetic fog parameters
+fog:
+  mild:
+    beta: 1.0
+    A:    0.9
+  dense:
+    beta: 2.5
+    A:    0.9
+
+# Synthetic low-light parameters
+low_light:
+  intensity_scale_min: 0.20
+  intensity_scale_max: 0.35
+  gamma_min: 1.5
+  gamma_max: 2.2
+  read_noise_sigma_min: 0.01
+  read_noise_sigma_max: 0.03

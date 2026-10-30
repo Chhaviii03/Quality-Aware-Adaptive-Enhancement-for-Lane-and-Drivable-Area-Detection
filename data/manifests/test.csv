@@ -1,0 +1,3 @@
+image_id,condition,split,img_path
+# This file is a placeholder. Run scripts/make_subset.sh to populate.
+# NEVER commit actual image files — only this manifest.

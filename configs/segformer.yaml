@@ -1,0 +1,56 @@
+# configs/segformer.yaml
+# SegFormer-B0 fine-tuning — training and inference settings.
+
+seed: 42
+
+# ── Data ────────────────────────────────────────────────────────────────────
+data_root:     "/data/bdd100k"
+manifest_dir:  "data/manifests"
+image_width:   640
+image_height:  352
+
+# ── Architecture ─────────────────────────────────────────────────────────────
+model: "segformer"
+backbone: "nvidia/mit-b0"    # HuggingFace model ID; fallback: "nvidia/mit-b1"
+out_channels: 2              # channel 0 = drivable, channel 1 = lane
+# NOTE: SegFormer predicts at 1/4 resolution and is bilinearly upsampled.
+# Thin-lane F1 will be lower than U-Net; document this in the report.
+
+# ── Loss ─────────────────────────────────────────────────────────────────────
+loss:
+  bce_weight:  0.5
+  dice_weight: 0.5
+  lane_pos_weight: 8.0
+
+# ── Optimiser ────────────────────────────────────────────────────────────────
+optimizer: "adamw"
+lr:         6.0e-5
+weight_decay: 1.0e-4
+scheduler: "cosine"
+epochs:     40
+batch_size: 8
+early_stopping_patience: 7
+
+# ── Augmentation ─────────────────────────────────────────────────────────────
+augmentation:
+  horizontal_flip: true
+  random_crop:     true
+  crop_scale: [0.8, 1.0]
+  brightness_jitter: 0.15
+
+# ── Checkpointing ────────────────────────────────────────────────────────────
+checkpoint_dir: "results/checkpoints/segformer"
+save_every_n_epochs: 5
+resume_from: null
+
+# ── Preprocessing at inference ────────────────────────────────────────────────
+enhancement: "none"
+
+# ── Debug mode ───────────────────────────────────────────────────────────────
+debug:
+  n_images: 20
+  epochs: 2
+  batch_size: 2
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+log_dir: "results/logs/segformer"

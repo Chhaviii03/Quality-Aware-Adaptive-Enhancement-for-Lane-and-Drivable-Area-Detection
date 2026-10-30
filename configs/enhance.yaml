@@ -1,0 +1,35 @@
+# configs/enhance.yaml
+# Parameters for each pure-function enhancement.
+
+# CLAHE (applied on the L channel of LAB)
+clahe:
+  clip_limit: 2.0
+  tile_grid_size: [8, 8]
+
+# Gamma correction
+# gamma is computed adaptively: gamma = ln(0.5) / ln(mean_L / 255)
+# clamped to [gamma_min, gamma_max]
+gamma:
+  gamma_min: 0.4
+  gamma_max: 1.0
+
+# Dark-channel prior dehaze
+dehaze:
+  patch_size: 15          # dark-channel patch radius (half-width)
+  omega: 0.95             # haze removal strength (0–1)
+  t_min: 0.10             # minimum transmission
+  top_frac: 0.001         # fraction of brightest dark-channel pixels for A
+  guided_radius: 40       # guided-filter radius for transmission refinement
+  guided_eps: 1.0e-3      # guided-filter regularisation
+
+# Denoising  (choose one backend per run; both must pass unit tests)
+denoise:
+  method: "nlm"           # "nlm" | "bilateral"
+  nlm_h: 10               # Non-local means filter strength
+  nlm_template_size: 7
+  nlm_search_size: 21
+  bilateral_d: 9
+  bilateral_sigma_color: 75
+  bilateral_sigma_space: 75
+
+# denoise+CLAHE uses the same params from both sections above
