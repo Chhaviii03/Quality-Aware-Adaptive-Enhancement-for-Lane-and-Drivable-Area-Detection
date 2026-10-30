@@ -9,20 +9,26 @@ Pipeline
 2. HLS colour threshold (white + yellow markings).
 3. Canny edge detection (low=50, high=150).
 4. Trapezoid ROI mask.
-5. Probabilistic Hough (rho=1, theta=1°, threshold=40,
+5. Optional bird's-eye warp (Inverse Perspective Mapping).
+6. Probabilistic Hough (rho=1, theta=1°, threshold=40,
    min_length=40, max_gap=20).
-6. Slope filter → left / right line groups.
-7. Least-squares line fit per group.
-8. Morphological closing on the rendered 8 px mask.
+7. Slope filter → left / right line groups.
+8. Least-squares line fit per group.
+9. Render 8 px binary mask (unwarped if bird's-eye was active).
+10. Morphological closing on the rendered 8 px mask.
 
-Every intermediate image is optionally saved to `stage_dir`.
+Every intermediate image is saved when `save_stages=True`.
 
 Usage
 -----
     from src.classical.lane_hough import detect_lanes
 
-    lane_mask = detect_lanes(bgr_image, save_stages=True,
-                              stage_dir="results/figures/stages/frame_001")
+    lane_mask = detect_lanes(
+        bgr_image,
+        save_stages=True,
+        stage_dir="results/figures/stages/frame_001",
+        use_birds_eye=False,
+    )
 """
 
 from __future__ import annotations
@@ -49,36 +55,42 @@ def _save(img: np.ndarray, path: Path, name: str) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _blur(bgr: np.ndarray) -> np.ndarray:
+    """Stage 1: Gaussian blur with 5x5 kernel."""
     return cv2.GaussianBlur(bgr, (5, 5), 0)
 
 
 def _hls_mask(bgr: np.ndarray) -> np.ndarray:
-    """Binary mask of white and yellow lane markings in HLS space."""
+    """Stage 2: Binary mask of white and yellow lane markings in HLS space."""
     hls = cv2.cvtColor(bgr, cv2.COLOR_BGR2HLS)
 
     # White: high lightness, low saturation
-    white = cv2.inRange(hls,
-                        np.array([0,   180, 0],   dtype=np.uint8),
-                        np.array([255, 255, 255],  dtype=np.uint8))
+    white = cv2.inRange(
+        hls,
+        np.array([0, 180, 0], dtype=np.uint8),
+        np.array([255, 255, 255], dtype=np.uint8),
+    )
 
-    # Yellow: hue ~15–35, moderate-to-high saturation
-    yellow = cv2.inRange(hls,
-                         np.array([10,  50, 70],   dtype=np.uint8),
-                         np.array([40, 255, 255],  dtype=np.uint8))
+    # Yellow: hue ~10–40, moderate-to-high saturation and lightness
+    yellow = cv2.inRange(
+        hls,
+        np.array([10, 50, 70], dtype=np.uint8),
+        np.array([40, 255, 255], dtype=np.uint8),
+    )
 
     return cv2.bitwise_or(white, yellow)
 
 
 def _canny(mask: np.ndarray, low: int = 50, high: int = 150) -> np.ndarray:
+    """Stage 3: Canny edge detector."""
     return cv2.Canny(mask, low, high)
 
 
 def _roi_mask(edges: np.ndarray) -> np.ndarray:
-    """Apply a trapezoid ROI centred on the lower half of the image."""
+    """Stage 4: Apply a trapezoid ROI centred on the lower half of the image."""
     H, W = edges.shape[:2]
     roi = np.zeros_like(edges)
 
-    # Trapezoid vertices (approximate lane area)
+    # Trapezoid vertices (approximate driving lane field of view)
     pts = np.array([[
         (int(0.05 * W), H),
         (int(0.45 * W), int(0.55 * H)),
@@ -90,8 +102,47 @@ def _roi_mask(edges: np.ndarray) -> np.ndarray:
     return cv2.bitwise_and(edges, roi)
 
 
-def _hough_lines(edges: np.ndarray) -> list[tuple]:
-    """Run Probabilistic Hough and return list of (x1,y1,x2,y2) segments."""
+def get_perspective_transform(H: int, W: int) -> tuple[np.ndarray, np.ndarray]:
+    """Compute perspective transform matrices for bird's-eye warp (IPM).
+
+    Returns
+    -------
+    M, Minv : tuple[np.ndarray, np.ndarray]
+        Forward (camera -> bird's-eye) and inverse (bird's-eye -> camera) 3x3 matrices.
+    """
+    src = np.float32([
+        [0.10 * W, H],
+        [0.43 * W, 0.60 * H],
+        [0.57 * W, 0.60 * H],
+        [0.90 * W, H],
+    ])
+    dst = np.float32([
+        [0.20 * W, H],
+        [0.20 * W, 0],
+        [0.80 * W, 0],
+        [0.80 * W, H],
+    ])
+    M = cv2.getPerspectiveTransform(src, dst)
+    Minv = cv2.getPerspectiveTransform(dst, src)
+    return M, Minv
+
+
+def birds_eye_warp(img: np.ndarray, M: np.ndarray) -> np.ndarray:
+    """Warp image or mask to top-down bird's-eye view."""
+    H, W = img.shape[:2]
+    interp = cv2.INTER_NEAREST if img.ndim == 2 else cv2.INTER_LINEAR
+    return cv2.warpPerspective(img, M, (W, H), flags=interp)
+
+
+def birds_eye_unwarp(img: np.ndarray, Minv: np.ndarray) -> np.ndarray:
+    """Unwarp bird's-eye view back to vehicle camera perspective."""
+    H, W = img.shape[:2]
+    interp = cv2.INTER_NEAREST if img.ndim == 2 else cv2.INTER_LINEAR
+    return cv2.warpPerspective(img, Minv, (W, H), flags=interp)
+
+
+def _hough_lines(edges: np.ndarray) -> list[tuple[int, int, int, int]]:
+    """Stage 5: Run Probabilistic Hough and return list of (x1, y1, x2, y2) segments."""
     lines = cv2.HoughLinesP(
         edges,
         rho=1,
@@ -100,17 +151,18 @@ def _hough_lines(edges: np.ndarray) -> list[tuple]:
         minLineLength=40,
         maxLineGap=20,
     )
-    if lines is None:
+    if lines is None or len(lines) == 0:
         return []
-    return [tuple(l[0]) for l in lines]
+    lines_arr = lines.reshape(-1, 4)
+    return [(int(x1), int(y1), int(x2), int(y2)) for x1, y1, x2, y2 in lines_arr]
 
 
 def _slope_filter(
-    lines: list[tuple],
-    slope_min: float = 0.3,
-    slope_max: float = 3.0,
-) -> tuple[list, list]:
-    """Split segments into left / right groups by slope sign."""
+    lines: list[tuple[int, int, int, int]],
+    slope_min: float = 0.2,
+    slope_max: float = 4.0,
+) -> tuple[list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:
+    """Stage 6: Split line segments into left and right groups by slope sign."""
     left, right = [], []
     for x1, y1, x2, y2 in lines:
         if x2 == x1:
@@ -125,26 +177,35 @@ def _slope_filter(
     return left, right
 
 
-def _fit_line(segments: list[tuple], H: int) -> Optional[tuple[int, int, int, int]]:
-    """Fit a single line through all segment endpoints; return (x1,y1,x2,y2)."""
+def _fit_line(
+    segments: list[tuple[int, int, int, int]],
+    H: int,
+    y_top_ratio: float = 0.58,
+) -> Optional[tuple[int, int, int, int]]:
+    """Fit a single line through segment endpoints; returns (x1, y1, x2, y2)."""
     if not segments:
         return None
     pts = np.array([(x, y) for x1, y1, x2, y2 in segments for x, y in [(x1, y1), (x2, y2)]])
     xs, ys = pts[:, 0].astype(float), pts[:, 1].astype(float)
     if len(xs) < 2:
         return None
-    coeffs = np.polyfit(ys, xs, 1)   # fit x = m*y + b
+    try:
+        coeffs = np.polyfit(ys, xs, 1)  # fit x = m*y + b
+    except np.linalg.LinAlgError:
+        return None
+
     y_bot = H
-    y_top = int(H * 0.58)
+    y_top = int(H * y_top_ratio)
     x_bot = int(np.polyval(coeffs, y_bot))
     x_top = int(np.polyval(coeffs, y_top))
     return x_bot, y_bot, x_top, y_top
 
 
 def _render_mask(
-    lines_left:  Optional[tuple],
-    lines_right: Optional[tuple],
-    H: int, W: int,
+    lines_left: Optional[tuple[int, int, int, int]],
+    lines_right: Optional[tuple[int, int, int, int]],
+    H: int,
+    W: int,
     thickness: int = 8,
 ) -> np.ndarray:
     """Render fitted left/right lines as an 8 px binary mask."""
@@ -157,6 +218,7 @@ def _render_mask(
 
 
 def _morph_close(mask: np.ndarray, ksize: int = 5) -> np.ndarray:
+    """Morphological closing to bridge small gaps and smooth edges."""
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (ksize, ksize))
     return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
@@ -169,6 +231,7 @@ def detect_lanes(
     bgr: np.ndarray,
     save_stages: bool = False,
     stage_dir: str | Path = "results/figures/stages",
+    use_birds_eye: bool = False,
 ) -> np.ndarray:
     """Run the full classical lane detection pipeline.
 
@@ -180,20 +243,23 @@ def detect_lanes(
         If True, writes every intermediate image to `stage_dir`.
     stage_dir : str | Path
         Directory for stage images (used only if save_stages=True).
+    use_birds_eye : bool
+        If True, applies perspective bird's-eye warp (IPM) before line fitting,
+        then unwarps the detected mask back to perspective camera coordinates.
 
     Returns
     -------
     np.ndarray
-        Binary lane mask, uint8, (H, W), 255 = lane.
+        Binary lane mask, uint8, (H, W), 255 = lane, 0 = background.
     """
     H, W = bgr.shape[:2]
     sdir = Path(stage_dir)
 
-    # Stage 0: original
+    # Stage 0: original input
     if save_stages:
         _save(bgr, sdir, "00_original.jpg")
 
-    # Stage 1: Gaussian blur
+    # Stage 1: Gaussian blur (5x5)
     blurred = _blur(bgr)
     if save_stages:
         _save(blurred, sdir, "01_blur.jpg")
@@ -208,43 +274,59 @@ def detect_lanes(
     if save_stages:
         _save(edges, sdir, "03_canny.jpg")
 
-    # Stage 4: ROI mask
+    # Stage 4: Trapezoid ROI mask
     roi_edges = _roi_mask(edges)
     if save_stages:
         _save(roi_edges, sdir, "04_roi.jpg")
 
-    # Stage 5: Probabilistic Hough
-    raw_lines = _hough_lines(roi_edges)
-    hough_vis = bgr.copy()
+    # Optional bird's-eye warp
+    M, Minv = get_perspective_transform(H, W)
+    if use_birds_eye:
+        hough_input = birds_eye_warp(roi_edges, M)
+        if save_stages:
+            bev_bgr = birds_eye_warp(bgr, M)
+            _save(bev_bgr, sdir, "04b_birds_eye.jpg")
+    else:
+        hough_input = roi_edges
+
+    # Stage 5: Probabilistic Hough lines
+    raw_lines = _hough_lines(hough_input)
+    hough_vis = (birds_eye_warp(bgr, M) if use_birds_eye else bgr).copy()
     for x1, y1, x2, y2 in raw_lines:
         cv2.line(hough_vis, (x1, y1), (x2, y2), (0, 255, 0), 2)
     if save_stages:
         _save(hough_vis, sdir, "05_hough.jpg")
 
     # Stage 6: Slope filter + line fit
+    y_top_ratio = 0.0 if use_birds_eye else 0.58
     left_segs, right_segs = _slope_filter(raw_lines)
-    left_line  = _fit_line(left_segs,  H)
-    right_line = _fit_line(right_segs, H)
-    fit_vis = bgr.copy()
+    left_line  = _fit_line(left_segs,  H, y_top_ratio=y_top_ratio)
+    right_line = _fit_line(right_segs, H, y_top_ratio=y_top_ratio)
+
+    fit_vis = (birds_eye_warp(bgr, M) if use_birds_eye else bgr).copy()
     for seg in (left_line, right_line):
         if seg:
             cv2.line(fit_vis, (seg[0], seg[1]), (seg[2], seg[3]), (0, 0, 255), 4)
     if save_stages:
         _save(fit_vis, sdir, "06_fit.jpg")
 
-    # Stage 7: Render 8 px mask
-    raw_mask = _render_mask(left_line, right_line, H, W)
+    # Stage 7: Render 8 px mask (and unwarp if bird's-eye active)
+    rendered = _render_mask(left_line, right_line, H, W, thickness=8)
+    if use_birds_eye:
+        raw_mask = birds_eye_unwarp(rendered, Minv)
+    else:
+        raw_mask = rendered
     if save_stages:
         _save(raw_mask, sdir, "07_raw_mask.jpg")
 
-    # Stage 8: Morphological close
+    # Stage 8: Morphological closing
     final_mask = _morph_close(raw_mask)
     if save_stages:
         _save(final_mask, sdir, "08_final_mask.jpg")
 
-    # Stage 9: Overlay for report
+    # Stage 9: Overlay for visual inspection & report figures
     overlay = bgr.copy()
-    overlay[final_mask > 0] = (0, 200, 255)
+    overlay[final_mask > 0] = (0, 200, 255)  # yellow-orange overlay
     if save_stages:
         _save(overlay, sdir, "09_overlay.jpg")
 

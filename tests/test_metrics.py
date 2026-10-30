@@ -10,7 +10,16 @@ Run with:
 import numpy as np
 import pytest
 
-from src.eval.metrics import road_iou, road_dice, lane_f1, psnr, ssim
+from src.eval.metrics import (
+    iou,
+    road_iou,
+    dice,
+    road_dice,
+    miou,
+    lane_f1,
+    psnr,
+    ssim,
+)
 
 
 def _ones(shape=(352, 640)):
@@ -107,3 +116,30 @@ class TestSSIM:
         b = np.full((100, 100, 3), 255, dtype=np.uint8)
         val = ssim(a, b)
         assert val < 0.5
+
+
+class TestIoUAndDiceAliases:
+    def test_iou_alias(self):
+        m = _ones()
+        assert iou(m, m) == road_iou(m, m)
+
+    def test_dice_alias(self):
+        m = _ones()
+        assert dice(m, m) == road_dice(m, m)
+
+
+class TestMIoU:
+    def test_miou_list(self):
+        m1 = _ones()
+        z1 = _zeros()
+        # IoU(m1, m1) = 1.0, IoU(z1, m1) = 0.0 -> mean = 0.5
+        val = miou([m1, z1], [m1, m1])
+        assert val == pytest.approx(0.5)
+
+    def test_miou_dict(self):
+        m1 = _ones()
+        z1 = _zeros()
+        preds = {"road": m1, "lane": z1}
+        gts   = {"road": m1, "lane": m1}
+        val = miou(preds, gts)
+        assert val == pytest.approx(0.5)

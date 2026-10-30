@@ -213,3 +213,77 @@ def failure_panel(
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
     return fig
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Histogram Enhancement Comparison Panel
+# ─────────────────────────────────────────────────────────────────────────────
+
+def histogram_panel(
+    original: np.ndarray,
+    enhanced: np.ndarray,
+    enhancement_name: str,
+    out_path: Optional[str | Path] = None,
+) -> plt.Figure:
+    """Show before/after enhancement alongside RGB & Luminance channel histograms.
+
+    Layout (2x2 grid):
+      [ Original Image ]       [ Enhanced Image ]
+      [ Before Histograms ]    [ After Histograms ]
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(14, 8), gridspec_kw={"height_ratios": [1.2, 1.0]})
+
+    # Top-left: Original Image
+    axes[0, 0].imshow(_bgr2rgb(original))
+    axes[0, 0].set_title("Original (Degraded / Input)", fontsize=12, pad=8)
+    axes[0, 0].axis("off")
+
+    # Top-right: Enhanced Image
+    axes[0, 1].imshow(_bgr2rgb(enhanced))
+    axes[0, 1].set_title(f"Enhanced: {enhancement_name.upper()}", fontsize=12, pad=8)
+    axes[0, 1].axis("off")
+
+    # Compute histograms
+    colors = [("b", "blue", "Blue"), ("g", "green", "Green"), ("r", "red", "Red")]
+
+    # Bottom-left: Histogram Before
+    ax_hist_before = axes[1, 0]
+    for idx, (col_key, plot_col, label) in enumerate(colors):
+        hist = cv2.calcHist([original], [idx], None, [256], [0, 256])
+        ax_hist_before.plot(hist, color=plot_col, alpha=0.7, label=label, linewidth=1.5)
+
+    # Luminance histogram
+    lab_orig = cv2.cvtColor(original, cv2.COLOR_BGR2LAB)
+    hist_l_orig = cv2.calcHist([lab_orig], [0], None, [256], [0, 256])
+    ax_hist_before.plot(hist_l_orig, color="black", linestyle="--", alpha=0.8, label="Luminance (L)", linewidth=1.5)
+
+    ax_hist_before.set_title("Histogram Before Enhancement", fontsize=11)
+    ax_hist_before.set_xlabel("Pixel Intensity [0 - 255]", fontsize=10)
+    ax_hist_before.set_ylabel("Pixel Count", fontsize=10)
+    ax_hist_before.set_xlim([0, 256])
+    ax_hist_before.grid(True, linestyle=":", alpha=0.5)
+    ax_hist_before.legend(loc="upper right", fontsize=8)
+
+    # Bottom-right: Histogram After
+    ax_hist_after = axes[1, 1]
+    for idx, (col_key, plot_col, label) in enumerate(colors):
+        hist = cv2.calcHist([enhanced], [idx], None, [256], [0, 256])
+        ax_hist_after.plot(hist, color=plot_col, alpha=0.7, label=label, linewidth=1.5)
+
+    lab_enh = cv2.cvtColor(enhanced, cv2.COLOR_BGR2LAB)
+    hist_l_enh = cv2.calcHist([lab_enh], [0], None, [256], [0, 256])
+    ax_hist_after.plot(hist_l_enh, color="black", linestyle="--", alpha=0.8, label="Luminance (L)", linewidth=1.5)
+
+    ax_hist_after.set_title(f"Histogram After {enhancement_name.upper()}", fontsize=11)
+    ax_hist_after.set_xlabel("Pixel Intensity [0 - 255]", fontsize=10)
+    ax_hist_after.set_ylabel("Pixel Count", fontsize=10)
+    ax_hist_after.set_xlim([0, 256])
+    ax_hist_after.grid(True, linestyle=":", alpha=0.5)
+    ax_hist_after.legend(loc="upper right", fontsize=8)
+
+    fig.tight_layout()
+    if out_path:
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    return fig
+

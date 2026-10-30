@@ -1,3 +1,21 @@
 image_id,condition,split,img_path
-# This file is a placeholder. Run scripts/make_subset.sh to populate.
-# NEVER commit actual image files — only this manifest.
+val_day_clear_000.jpg,day_clear,val,data/sample_val/val_day_clear_000.jpg
+val_day_clear_001.jpg,day_clear,val,data/sample_val/val_day_clear_001.jpg
+val_day_clear_002.jpg,day_clear,val,data/sample_val/val_day_clear_002.jpg
+val_day_clear_003.jpg,day_clear,val,data/sample_val/val_day_clear_003.jpg
+val_day_clear_004.jpg,day_clear,val,data/sample_val/val_day_clear_004.jpg
+val_night_000.jpg,night,val,data/sample_val/val_night_000.jpg
+val_night_001.jpg,night,val,data/sample_val/val_night_001.jpg
+val_night_002.jpg,night,val,data/sample_val/val_night_002.jpg
+val_night_003.jpg,night,val,data/sample_val/val_night_003.jpg
+val_night_004.jpg,night,val,data/sample_val/val_night_004.jpg
+val_rain_000.jpg,rain,val,data/sample_val/val_rain_000.jpg
+val_rain_001.jpg,rain,val,data/sample_val/val_rain_001.jpg
+val_rain_002.jpg,rain,val,data/sample_val/val_rain_002.jpg
+val_rain_003.jpg,rain,val,data/sample_val/val_rain_003.jpg
+val_rain_004.jpg,rain,val,data/sample_val/val_rain_004.jpg
+val_fog_000.jpg,fog,val,data/sample_val/val_fog_000.jpg
+val_fog_001.jpg,fog,val,data/sample_val/val_fog_001.jpg
+val_fog_002.jpg,fog,val,data/sample_val/val_fog_002.jpg
+val_fog_003.jpg,fog,val,data/sample_val/val_fog_003.jpg
+val_fog_004.jpg,fog,val,data/sample_val/val_fog_004.jpg

@@ -3,22 +3,28 @@ src/eval/metrics.py
 -------------------
 Evaluation metrics used by the harness and oracle labeller.
 
-All functions operate on numpy uint8 binary masks (0 or 255).
+Metrics:
+  - iou / road_iou : Intersection-over-Union for binary masks (0 or 255)
+  - dice / road_dice : Dice similarity coefficient for binary masks
+  - miou : Mean IoU across multiple classes or mask pairs
+  - lane_f1 : Lane F1 with 5-pixel tolerance (distance transform)
+  - psnr, ssim : Quality metrics for synthetic degradation evaluation
 """
 
 from __future__ import annotations
 
+from typing import Union, Sequence, Mapping
 import cv2
 import numpy as np
 from scipy.ndimage import distance_transform_edt
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Drivable-area metrics
+# IoU and Dice metrics
 # ─────────────────────────────────────────────────────────────────────────────
 
-def road_iou(pred: np.ndarray, gt: np.ndarray) -> float:
-    """Intersection-over-Union for drivable-area masks.
+def iou(pred: np.ndarray, gt: np.ndarray) -> float:
+    """Intersection-over-Union for binary masks.
 
     Parameters
     ----------
@@ -38,8 +44,22 @@ def road_iou(pred: np.ndarray, gt: np.ndarray) -> float:
     return float(inter) / float(union)
 
 
-def road_dice(pred: np.ndarray, gt: np.ndarray) -> float:
-    """Dice coefficient for drivable-area masks."""
+# Alias for backwards compatibility with drivable-area evaluator
+road_iou = iou
+
+
+def dice(pred: np.ndarray, gt: np.ndarray) -> float:
+    """Dice similarity coefficient for binary masks.
+
+    Parameters
+    ----------
+    pred, gt : np.ndarray
+        Binary uint8 masks (0 or 255), same shape.
+
+    Returns
+    -------
+    float in [0, 1].
+    """
     pred_b = pred > 0
     gt_b   = gt   > 0
     inter  = (pred_b & gt_b).sum()
@@ -47,6 +67,46 @@ def road_dice(pred: np.ndarray, gt: np.ndarray) -> float:
     if denom == 0:
         return 1.0
     return float(2 * inter) / float(denom)
+
+
+# Alias for backwards compatibility with drivable-area evaluator
+road_dice = dice
+
+
+def miou(
+    preds: Union[Sequence[np.ndarray], Mapping[str, np.ndarray], np.ndarray],
+    gts: Union[Sequence[np.ndarray], Mapping[str, np.ndarray], np.ndarray],
+) -> float:
+    """Mean Intersection-over-Union across multiple classes or mask pairs.
+
+    Parameters
+    ----------
+    preds : Sequence[np.ndarray] | Mapping[str, np.ndarray] | np.ndarray
+        Predicted binary masks.
+    gts : Sequence[np.ndarray] | Mapping[str, np.ndarray] | np.ndarray
+        Ground-truth binary masks matching `preds`.
+
+    Returns
+    -------
+    float in [0, 1] representing the mean IoU.
+    """
+    if isinstance(preds, Mapping) and isinstance(gts, Mapping):
+        common_keys = [k for k in preds if k in gts]
+        if not common_keys:
+            return 0.0
+        ious = [iou(preds[k], gts[k]) for k in common_keys]
+        return float(np.mean(ious))
+
+    if isinstance(preds, (list, tuple)) and isinstance(gts, (list, tuple)):
+        if len(preds) != len(gts):
+            raise ValueError(f"Lengths differ: {len(preds)} vs {len(gts)}")
+        if len(preds) == 0:
+            return 1.0
+        ious = [iou(p, g) for p, g in zip(preds, gts)]
+        return float(np.mean(ious))
+
+    # Single mask pair fallback
+    return iou(np.asarray(preds), np.asarray(gts))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -62,14 +122,14 @@ def _within_tolerance(pred: np.ndarray, gt: np.ndarray, tol: int = 5) -> np.ndar
         return np.zeros_like(pred_b)
 
     # Distance transform on the background of the GT mask
-    dt_gt = distance_transform_edt(1 - gt_b)   # 0 where GT=1, distance elsewhere
+    dt_gt = distance_transform_edt(1 - gt_b)   # 0 where GT=1, Euclidean distance elsewhere
     # Predicted pixels within tolerance of any GT pixel
     within = (pred_b > 0) & (dt_gt <= tol)
     return within.astype(np.uint8)
 
 
 def lane_f1(pred: np.ndarray, gt: np.ndarray, tol: int = 5) -> float:
-    """Lane F1 with 5-pixel tolerance (our project definition).
+    """Lane F1 with 5-pixel tolerance (project definition).
 
     Precision = fraction of predicted lane pixels within `tol` px of GT.
     Recall    = fraction of GT lane pixels within `tol` px of prediction.
@@ -79,7 +139,7 @@ def lane_f1(pred: np.ndarray, gt: np.ndarray, tol: int = 5) -> float:
     pred, gt : np.ndarray
         Binary uint8 masks (0 or 255), same shape.
     tol : int
-        Pixel tolerance for matching.
+        Pixel tolerance for matching (default: 5 px).
 
     Returns
     -------

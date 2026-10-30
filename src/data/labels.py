@@ -50,6 +50,8 @@ def load_lane_mask(
 
     # Path 1: pre-rasterized mask PNG
     mask_path = data_root / "labels" / "lane" / "masks" / split / f"{stem}.png"
+    if not mask_path.exists():
+        mask_path = Path("data") / "labels" / "lane" / "masks" / split / f"{stem}.png"
     if mask_path.exists():
         mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
@@ -96,6 +98,8 @@ def load_road_mask(
 
     # BDD100K drivable masks: pixel value 0 = drivable, 1 = alt-drivable, 255 = bg
     mask_path = data_root / "labels" / "drivable" / "masks" / split / f"{stem}.png"
+    if not mask_path.exists():
+        mask_path = Path("data") / "labels" / "drivable" / "masks" / split / f"{stem}.png"
     if mask_path.exists():
         mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
