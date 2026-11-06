@@ -48,15 +48,365 @@ from src.viz.panels import (
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Streamlit Page Config
+# Streamlit Page Config & Theme Styling
 # ─────────────────────────────────────────────────────────────────────────────
 
 st.set_page_config(
     page_title="DIP Drivable Area & Enhancement Dashboard",
-    page_icon="🚗",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+st.markdown(
+    """
+    <style>
+    /* ── Page Canvas ─────────────────────────────────────────────────────────── */
+    .stApp {
+        background-color: #FFFFFF !important;
+        color: #1B3A2A !important;
+    }
+
+    /* ── Typography (General) ────────────────────────────────────────────────── */
+    h1, h2, h3, h4, h5, h6 {
+        color: #1E7B45;
+        font-family: sans-serif;
+        font-weight: 700;
+    }
+
+    h2:not(.num-head) {
+        border-bottom: 2px solid #A8E0BC;
+        padding-bottom: 6px;
+        margin-bottom: 16px;
+    }
+
+    /* ── Numbered Section Headings ───────────────────────────────────────────── */
+    /* Main page numbered section headings */
+    .num-head {
+        background-color: #D5F2DF !important;
+        color: #14532D !important;
+        padding: 10px 16px !important;
+        border-radius: 10px !important;
+        border-left: 5px solid #2E9E5B !important;
+        border-bottom: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-top: 24px !important;
+        margin-bottom: 16px !important;
+        font-size: 1.45rem !important;
+        font-weight: 700 !important;
+        display: block !important;
+    }
+    .num-head * {
+        color: #14532D !important;
+    }
+
+    /* Sidebar numbered section headings */
+    .num-head-sb {
+        background-color: #A8E0BC !important;
+        color: #14532D !important;
+        padding: 10px 16px !important;
+        border-radius: 10px !important;
+        border-left: 5px solid #14532D !important;
+        border-bottom: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-top: 18px !important;
+        margin-bottom: 12px !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        display: block !important;
+    }
+    .num-head-sb * {
+        color: #14532D !important;
+    }
+
+    /* ── Dark Green Sidebar ──────────────────────────────────────────────────── */
+    [data-testid="stSidebar"],
+    section[data-testid="stSidebar"] {
+        background-color: #14532D !important;
+        border-right: 1px solid #2E9E5B !important;
+        color: #F0FFF4 !important;
+    }
+
+    /* Sidebar scrollbar & collapse controls */
+    [data-testid="stSidebar"]::-webkit-scrollbar {
+        width: 8px;
+    }
+    [data-testid="stSidebar"]::-webkit-scrollbar-thumb {
+        background-color: #2E9E5B;
+        border-radius: 4px;
+    }
+    [data-testid="stSidebar"]::-webkit-scrollbar-track {
+        background-color: #14532D;
+    }
+
+    [data-testid="stSidebarCollapseButton"] button,
+    [data-testid="stSidebarCollapseButton"] svg,
+    [data-testid="collapsedControl"] button,
+    [data-testid="collapsedControl"] svg,
+    button[kind="header"] {
+        color: #F0FFF4 !important;
+        fill: #F0FFF4 !important;
+    }
+
+    /* Sidebar text: labels, paragraphs, captions, help, spans */
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] .stCaption,
+    [data-testid="stSidebar"] div[data-testid="stCaptionContainer"] {
+        color: #F0FFF4 !important;
+    }
+
+    /* Sidebar headings */
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3:not(.num-head-sb),
+    [data-testid="stSidebar"] h4 {
+        color: #FFFFFF !important;
+    }
+
+    /* Sidebar dividers */
+    [data-testid="stSidebar"] hr {
+        border-color: #2E9E5B !important;
+    }
+
+    /* Sidebar radio and checkbox controls */
+    [data-testid="stSidebar"] input[type="radio"],
+    [data-testid="stSidebar"] input[type="checkbox"] {
+        accent-color: #6CC78B !important;
+    }
+    [data-testid="stSidebar"] .stRadio label,
+    [data-testid="stSidebar"] .stCheckbox label {
+        color: #F0FFF4 !important;
+    }
+
+    /* Sidebar Inputs: selectbox, text input, slider */
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid #A8E0BC !important;
+        border-radius: 6px !important;
+    }
+    [data-testid="stSidebar"] div[data-baseweb="select"] * {
+        color: #1B3A2A !important;
+    }
+
+    [data-testid="stSidebar"] div[data-baseweb="input"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid #A8E0BC !important;
+        border-radius: 6px !important;
+    }
+    [data-testid="stSidebar"] div[data-baseweb="input"] input {
+        color: #1B3A2A !important;
+        background-color: #FFFFFF !important;
+    }
+
+    /* Dropdown popover / menu lists (dark text on white/pale green) */
+    div[data-baseweb="popover"],
+    div[data-baseweb="menu"],
+    ul[data-baseweb="menu"] {
+        background-color: #FFFFFF !important;
+    }
+    ul[data-baseweb="menu"] li {
+        background-color: #FFFFFF !important;
+        color: #1B3A2A !important;
+    }
+    ul[data-baseweb="menu"] li:hover,
+    ul[data-baseweb="menu"] li[aria-selected="true"] {
+        background-color: #EAF7EE !important;
+        color: #14532D !important;
+    }
+
+    /* File uploader in sidebar */
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] {
+        background-color: #EAF7EE !important;
+        border: 1px dashed #2E9E5B !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] * {
+        color: #1B3A2A !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button {
+        background-color: #2E9E5B !important;
+        color: #FFFFFF !important;
+        border: none !important;
+    }
+
+    /* Sidebar Expander */
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        background-color: #1C693A !important;
+        border: 1px solid #2E9E5B !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary {
+        color: #FFFFFF !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background-color: #14532D !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] * {
+        color: #F0FFF4 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] code {
+        background-color: #1E7B45 !important;
+        color: #FFFFFF !important;
+    }
+
+    /* ── Main Page Components ────────────────────────────────────────────────── */
+    .stButton > button,
+    button[kind="primary"],
+    button[kind="secondary"],
+    [data-testid="baseButton-secondary"],
+    [data-testid="baseButton-primary"] {
+        background-color: #2E9E5B !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1E7B45 !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stButton > button:hover,
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover,
+    [data-testid="baseButton-secondary"]:hover,
+    [data-testid="baseButton-primary"]:hover {
+        background-color: #1E7B45 !important;
+        border-color: #1E7B45 !important;
+        color: #FFFFFF !important;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        accent-color: #2E9E5B;
+    }
+
+    /* Tables & DataFrames */
+    [data-testid="stDataFrame"],
+    .stTable,
+    [data-testid="stTable"] {
+        border: 1px solid #A8E0BC !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    [data-testid="stDataFrame"] th,
+    .stTable th,
+    [data-testid="stTable"] th {
+        background-color: #EAF7EE !important;
+        color: #1E7B45 !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #A8E0BC !important;
+    }
+
+    [data-testid="stDataFrame"] td,
+    .stTable td,
+    [data-testid="stTable"] td {
+        color: #1B3A2A !important;
+        background-color: #FFFFFF !important;
+        border-bottom: 1px solid #EAF7EE !important;
+    }
+
+    /* Metric Cards & Expanders on Main Page */
+    [data-testid="stMetric"] {
+        background-color: #EAF7EE !important;
+        border: 1px solid #A8E0BC !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        box-shadow: 0 2px 6px rgba(46, 158, 91, 0.08) !important;
+    }
+
+    [data-testid="stMetricLabel"] p,
+    [data-testid="stMetricLabel"] label,
+    [data-testid="stMetricLabel"] {
+        color: #1E7B45 !important;
+        font-weight: 600 !important;
+    }
+
+    [data-testid="stMetricValue"] div,
+    [data-testid="stMetricValue"] {
+        color: #1B3A2A !important;
+        font-weight: 700 !important;
+    }
+
+    .main [data-testid="stExpander"] {
+        background-color: #EAF7EE !important;
+        border: 1px solid #A8E0BC !important;
+        border-radius: 10px !important;
+        box-shadow: 0 2px 6px rgba(46, 158, 91, 0.06) !important;
+        margin-bottom: 12px !important;
+    }
+    .main [data-testid="stExpander"] summary {
+        color: #1E7B45 !important;
+        font-weight: 600 !important;
+    }
+    .main [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background-color: #FFFFFF !important;
+        border-top: 1px solid #A8E0BC !important;
+        border-radius: 0 0 10px 10px !important;
+        padding: 14px !important;
+    }
+
+    /* Alerts */
+    [data-testid="stAlert"] {
+        border-radius: 8px !important;
+        font-size: 0.95rem !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+    }
+    [data-testid="stAlert"]:has([data-testid="stNotificationContentInfo"]),
+    [data-testid="stAlert"][data-baseweb="notification"]:has([aria-label="info"]) {
+        background-color: #EAF7EE !important;
+        color: #1B3A2A !important;
+        border-left: 5px solid #2E9E5B !important;
+        border-top: 1px solid #A8E0BC !important;
+        border-right: 1px solid #A8E0BC !important;
+        border-bottom: 1px solid #A8E0BC !important;
+    }
+    [data-testid="stAlert"]:has([data-testid="stNotificationContentWarning"]),
+    [data-testid="stAlert"][data-baseweb="notification"]:has([aria-label="warning"]) {
+        background-color: #FEF9E7 !important;
+        color: #5B4300 !important;
+        border-left: 5px solid #2E9E5B !important;
+        border-top: 1px solid #F3E5AB !important;
+        border-right: 1px solid #F3E5AB !important;
+        border-bottom: 1px solid #F3E5AB !important;
+    }
+    [data-testid="stAlert"]:has([data-testid="stNotificationContentSuccess"]),
+    [data-testid="stAlert"][data-baseweb="notification"]:has([aria-label="success"]) {
+        background-color: #EAF7EE !important;
+        color: #1E7B45 !important;
+        border-left: 5px solid #1E7B45 !important;
+        border-top: 1px solid #A8E0BC !important;
+        border-right: 1px solid #A8E0BC !important;
+        border-bottom: 1px solid #A8E0BC !important;
+    }
+    [data-testid="stAlert"]:has([data-testid="stNotificationContentError"]),
+    [data-testid="stAlert"][data-baseweb="notification"]:has([aria-label="error"]) {
+        background-color: #FDF2F2 !important;
+        color: #7A1B1B !important;
+        border-left: 5px solid #E06A6A !important;
+        border-top: 1px solid #F5C6CB !important;
+        border-right: 1px solid #F5C6CB !important;
+        border-bottom: 1px solid #F5C6CB !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def section_header(text: str, sidebar: bool = False) -> None:
+    """Render a styled numbered section heading with a light green background."""
+    cls_name = "num-head-sb" if sidebar else "num-head"
+    tag = "h3" if sidebar else "h2"
+    html = f'<{tag} class="{cls_name}">{text}</{tag}>'
+    if sidebar:
+        st.sidebar.markdown(html, unsafe_allow_html=True)
+    else:
+        st.markdown(html, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,7 +474,7 @@ def compute_binary_metrics(pred_mask: np.ndarray, gt_mask: np.ndarray) -> tuple[
 # Sidebar: Controls & Parameters
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.sidebar.title("🚗 Controls & Settings")
+st.sidebar.title("Controls & Settings")
 
 data_cfg = load_yaml_config("configs/data.yaml")
 router_cfg = load_yaml_config("configs/router.yaml")
@@ -136,7 +486,7 @@ target_h = data_cfg.get("image_height", 352)
 seed = data_cfg.get("seed", 42)
 
 # Frame source
-st.sidebar.subheader("1. Frame Selection")
+section_header("1. Frame Selection", sidebar=True)
 frame_source = st.sidebar.radio("Frame Source:", ["Test Split Manifest", "Upload Image"], index=0)
 
 selected_bgr: Optional[np.ndarray] = None
@@ -189,7 +539,7 @@ if selected_gt_mask is not None and selected_gt_mask.shape[:2] != (target_h, tar
     selected_gt_mask = cv2.resize(selected_gt_mask, (target_w, target_h), interpolation=cv2.INTER_NEAREST)
 
 # Synthetic Degradation
-st.sidebar.subheader("2. Synthetic Degradation")
+section_header("2. Synthetic Degradation", sidebar=True)
 degradation_choice = st.sidebar.selectbox(
     "Apply Degradation:",
     ["none", "fog mild (beta=1.0)", "fog dense (beta=2.5)", "low light"],
@@ -205,7 +555,7 @@ elif degradation_choice == "low light":
     processed_input_bgr = apply_low_light(selected_bgr, intensity_scale=0.25, gamma=1.8, seed=seed)
 
 # Enhancement Strategy
-st.sidebar.subheader("3. Enhancement Selection")
+section_header("3. Enhancement Selection", sidebar=True)
 enhancement_options = ["adaptive (router)"] + list(ENHANCEMENT_NAMES)
 enhancement_choice = st.sidebar.selectbox("Enhancement Method:", enhancement_options, index=0)
 
@@ -226,7 +576,7 @@ with st.sidebar.expander("⚙️ Active Parameters", expanded=False):
 # Main Dashboard Header
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.title("🚗 Autonomous Driving DIP & Segmentation Dashboard")
+st.title("Autonomous Driving DIP & Segmentation Dashboard")
 st.markdown(
     "Interactive inspection system for Digital Image Processing (DIP) enhancement, "
     "classical image processing, and deep learning drivable area segmentation."
@@ -238,7 +588,7 @@ st.divider()
 # PANEL 1: INPUT
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("1. Input Frame & Quality Metrics")
+section_header("1. Input Frame & Quality Metrics")
 p1_col1, p1_col2 = st.columns([1, 1])
 
 with p1_col1:
@@ -281,7 +631,7 @@ st.divider()
 # PANEL 2: DIP STAGE (Enhancement & Classical Hough)
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("2. DIP Enhancement & Classical Stages")
+section_header("2. DIP Enhancement & Classical Stages")
 
 # Determine active enhancement
 router = get_cached_router()
@@ -328,7 +678,7 @@ st.divider()
 # PANEL 3: OBJECT / REGION STAGE
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("3. Object & Region Stage (Connected Components)")
+section_header("3. Object & Region Stage (Connected Components)")
 
 # Use ground truth drivable mask if available, else derive from threshold/classical cleaned mask
 if selected_gt_mask is not None and np.any(selected_gt_mask > 0):
@@ -370,7 +720,7 @@ st.divider()
 # PANEL 4: AI STAGE (Segmentation Model)
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("4. AI Stage: Deep Learning Drivable Area Segmentation")
+section_header("4. AI Stage: Deep Learning Drivable Area Segmentation")
 
 ckpt_path = unet_cfg.get("checkpoint_dir", "results/checkpoints/unet") + "/unet_drivable_best.pt"
 allow_mock = st.checkbox("Enable Mock / Random-Init Model if Checkpoint Missing", value=False)
@@ -418,11 +768,6 @@ else:
             e_c1.metric("Enhanced Frame IoU", f"{iou_enh:.4f}")
             e_c2.metric("Enhanced Frame Dice", f"{dice_enh:.4f}")
 
-st.info(
-    "ℹ️ **Attention Maps & Embeddings**: Not applicable. "
-    "ResNet-18 U-Net uses standard convolutional feature maps with skip connections, without self-attention or transformer token embeddings."
-)
-
 st.divider()
 
 
@@ -430,7 +775,7 @@ st.divider()
 # PANEL 5: EVALUATION (Aggregate Results & Benchmarks)
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("5. Evaluation & Benchmark Summary")
+section_header("5. Evaluation & Benchmark Summary")
 
 # Evaluation tables
 col_eval1, col_eval2 = st.columns(2)
@@ -484,7 +829,7 @@ st.divider()
 # PANEL 6: FAILURE ANALYSIS & QUALITATIVE REVIEW
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.header("6. Failure Analysis & Qualitative Review")
+section_header("6. Failure Analysis & Qualitative Review")
 
 # Test per-frame predictions table
 test_preds_path = "results/tables/test_predictions.csv"
