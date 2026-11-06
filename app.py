@@ -102,7 +102,10 @@ st.markdown(
     }
 
     /* Sidebar numbered section headings */
-    .num-head-sb {
+    .num-head-sb,
+    [data-testid="stSidebar"] .num-head-sb,
+    [data-testid="stSidebar"] h3.num-head-sb,
+    [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] h3.num-head-sb {
         background-color: #A8E0BC !important;
         color: #14532D !important;
         padding: 10px 16px !important;
@@ -117,7 +120,8 @@ st.markdown(
         font-weight: 700 !important;
         display: block !important;
     }
-    .num-head-sb * {
+    .num-head-sb *,
+    [data-testid="stSidebar"] .num-head-sb * {
         color: #14532D !important;
     }
 
@@ -177,6 +181,23 @@ st.markdown(
         color: #F0FFF4 !important;
     }
 
+    /* ── Sidebar Alerts (Error, Info, Warning, Success) ───────────────────────── */
+    [data-testid="stSidebar"] [data-testid="stAlert"],
+    [data-testid="stSidebar"] [data-testid="stNotification"],
+    [data-testid="stSidebar"] div[role="alert"] {
+        border-radius: 8px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stAlert"] *,
+    [data-testid="stSidebar"] [data-testid="stAlert"] p,
+    [data-testid="stSidebar"] [data-testid="stAlert"] span,
+    [data-testid="stSidebar"] [data-testid="stAlert"] div,
+    [data-testid="stSidebar"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stNotification"] *,
+    [data-testid="stSidebar"] div[role="alert"] * {
+        color: #1B3A2A !important;
+        font-weight: 600 !important;
+    }
+
     /* Sidebar headings */
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
@@ -198,6 +219,13 @@ st.markdown(
     [data-testid="stSidebar"] .stRadio label,
     [data-testid="stSidebar"] .stCheckbox label {
         color: #F0FFF4 !important;
+        background-color: transparent !important;
+    }
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label {
+        background-color: transparent !important;
+    }
+    [data-testid="stSidebar"] .stRadio div[role="radiogroup"] > label div {
+        background-color: transparent !important;
     }
 
     /* Sidebar Inputs: selectbox, text input, slider */
@@ -241,15 +269,26 @@ st.markdown(
         background-color: #EAF7EE !important;
         border: 1px dashed #2E9E5B !important;
         border-radius: 8px !important;
-        padding: 10px !important;
+        padding: 12px !important;
     }
-    [data-testid="stSidebar"] [data-testid="stFileUploader"] * {
-        color: #1B3A2A !important;
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] *,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] label,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stWidgetLabel"] label,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stWidgetLabel"] p,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] p,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] span,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] small,
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] div {
+        color: #14532D !important;
+        font-weight: 600 !important;
     }
     [data-testid="stSidebar"] [data-testid="stFileUploader"] button {
         background-color: #2E9E5B !important;
         color: #FFFFFF !important;
         border: none !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button * {
+        color: #FFFFFF !important;
     }
 
     /* Sidebar Expander */
@@ -419,7 +458,7 @@ def section_header(text: str, sidebar: bool = False) -> None:
     """Render a styled numbered section heading with a light green background."""
     cls_name = "num-head-sb" if sidebar else "num-head"
     tag = "h3" if sidebar else "h2"
-    html = f'<{tag} class="{cls_name}">{text}</{tag}>'
+    html = f'<{tag} class="{cls_name}" style="color: #14532D !important;">{text}</{tag}>'
     if sidebar:
         st.sidebar.markdown(html, unsafe_allow_html=True)
     else:
