@@ -141,13 +141,30 @@ st.markdown(
         background-color: #14532D;
     }
 
-    [data-testid="stSidebarCollapseButton"] button,
-    [data-testid="stSidebarCollapseButton"] svg,
-    [data-testid="collapsedControl"] button,
-    [data-testid="collapsedControl"] svg,
-    button[kind="header"] {
+    /* Sidebar collapse button (inside dark sidebar) */
+    [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button,
+    [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg {
         color: #F0FFF4 !important;
         fill: #F0FFF4 !important;
+    }
+
+    /* Top Header Bar & Toolbar Controls (Deploy, Stop, 3-dots Menu) */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+    header[data-testid="stHeader"] button,
+    header[data-testid="stHeader"] [data-testid="stToolbar"] button,
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] button,
+    header[data-testid="stHeader"] span,
+    header[data-testid="stHeader"] svg,
+    [data-testid="collapsedControl"] button,
+    [data-testid="collapsedControl"] svg {
+        color: #14532D !important;
+        fill: #14532D !important;
+    }
+    header[data-testid="stHeader"] button:hover {
+        background-color: #EAF7EE !important;
+        color: #1E7B45 !important;
     }
 
     /* Sidebar text: labels, paragraphs, captions, help, spans */
