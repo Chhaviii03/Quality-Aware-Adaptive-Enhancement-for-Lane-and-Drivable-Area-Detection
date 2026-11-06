@@ -19,9 +19,8 @@ import numpy as np
 # Public data structure
 # ─────────────────────────────────────────────────────────────────────────────
 
-@dataclass
-class QualityVector:
-    """Per-frame quality descriptor.
+class QualityVector(dict):
+    """Per-frame quality descriptor (dict-compatible dataclass).
 
     Fields
     ------
@@ -42,8 +41,22 @@ class QualityVector:
     noise:      float
     haze:       float
 
+    def __init__(self, brightness: float, contrast: float, sharpness: float, noise: float, haze: float):
+        super().__init__(
+            brightness=float(brightness),
+            contrast=float(contrast),
+            sharpness=float(sharpness),
+            noise=float(noise),
+            haze=float(haze),
+        )
+        self.brightness = float(brightness)
+        self.contrast   = float(contrast)
+        self.sharpness  = float(sharpness)
+        self.noise      = float(noise)
+        self.haze       = float(haze)
+
     def to_dict(self) -> dict[str, float]:
-        return asdict(self)
+        return dict(self)
 
     def to_array(self) -> np.ndarray:
         return np.array([self.brightness, self.contrast,
@@ -137,3 +150,8 @@ def compute_quality(bgr: np.ndarray) -> QualityVector:
         noise=noise,
         haze=haze,
     )
+
+
+# Alias for compatibility
+compute_quality_vector = compute_quality
+

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-11-05T17:13:41+0530",
+  "checkpoint_path": "results\\checkpoints\\unet_drivable_best.pt",
+  "checkpoint_sha256": "cbacfd9bbeaff06f0b5e309567021f2b155a3cc3fa05813be6d1e0f24abb8f17",
+  "checkpoint_size_bytes": 57417895,
+  "test_manifest": "data\\manifests\\test.csv",
+  "n_frames_evaluated": 150,
+  "total_inference_time_seconds": 545.27,
+  "router_rules_source": "configs/router.yaml",
+  "enhance_params_source": "configs/enhance.yaml",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python_version": "3.14.6",
+  "torch_version": "2.15.0+cpu"
+}

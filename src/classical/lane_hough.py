@@ -331,3 +331,62 @@ def detect_lanes(
         _save(overlay, sdir, "09_overlay.jpg")
 
     return final_mask
+
+
+def get_hough_stage_images(bgr: np.ndarray, use_birds_eye: bool = False) -> dict[str, np.ndarray]:
+    """Run classical lane detector and return a dictionary of intermediate stage images.
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        Mapping stage names to images for display:
+        '01_blur', '02_hls_mask', '03_canny', '04_roi', '05_hough', '06_fit', '08_final_mask', '09_overlay'
+    """
+    H, W = bgr.shape[:2]
+    stages: dict[str, np.ndarray] = {}
+
+    stages["00_original"] = bgr.copy()
+    blurred = _blur(bgr)
+    stages["01_blur"] = blurred
+
+    colour_mask = _hls_mask(blurred)
+    stages["02_hls_mask"] = colour_mask
+
+    edges = _canny(colour_mask)
+    stages["03_canny"] = edges
+
+    roi_edges = _roi_mask(edges)
+    stages["04_roi"] = roi_edges
+
+    M, Minv = get_perspective_transform(H, W)
+    hough_input = birds_eye_warp(roi_edges, M) if use_birds_eye else roi_edges
+
+    raw_lines = _hough_lines(hough_input)
+    hough_vis = (birds_eye_warp(bgr, M) if use_birds_eye else bgr).copy()
+    for x1, y1, x2, y2 in raw_lines:
+        cv2.line(hough_vis, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    stages["05_hough"] = hough_vis
+
+    y_top_ratio = 0.0 if use_birds_eye else 0.58
+    left_segs, right_segs = _slope_filter(raw_lines)
+    left_line = _fit_line(left_segs, H, y_top_ratio=y_top_ratio)
+    right_line = _fit_line(right_segs, H, y_top_ratio=y_top_ratio)
+
+    fit_vis = (birds_eye_warp(bgr, M) if use_birds_eye else bgr).copy()
+    for seg in (left_line, right_line):
+        if seg:
+            cv2.line(fit_vis, (seg[0], seg[1]), (seg[2], seg[3]), (0, 0, 255), 4)
+    stages["06_fit"] = fit_vis
+
+    rendered = _render_mask(left_line, right_line, H, W, thickness=8)
+    raw_mask = birds_eye_unwarp(rendered, Minv) if use_birds_eye else rendered
+    stages["07_raw_mask"] = raw_mask
+
+    final_mask = _morph_close(raw_mask)
+    stages["08_cleaned_mask"] = final_mask
+
+    overlay = bgr.copy()
+    overlay[final_mask > 0] = (0, 200, 255)
+    stages["09_overlay"] = overlay
+
+    return stages

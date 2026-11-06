@@ -16,7 +16,11 @@ opencv-contrib-python-headless>=4.8   # guided filter
 torch>=2.1
 torchvision>=0.16
 transformers>=4.38          # SegFormer
+segmentation-models-pytorch>=0.3.3
 accelerate>=0.27
+
+# Dashboard
+streamlit>=1.30
 
 # Evaluation / stats
 scikit-image>=0.21

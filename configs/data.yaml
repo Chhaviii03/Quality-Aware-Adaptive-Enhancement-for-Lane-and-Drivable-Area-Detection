@@ -3,11 +3,19 @@
 
 seed: 42
 
-# Root of the BDD100K download (images100k/images/100k/)
-data_root: "/data/bdd100k"
+# Root of the BDD100K subset download
+data_root: "bdd_subset"
 
 # Where manifests live (relative to repo root or absolute)
 manifest_dir: "data/manifests"
+
+# Processed data output directory
+processed_dir: "data/processed"
+
+# Output zip paths for Colab training bundles
+colab_bundle_stage1: "colab_bundle.zip"
+colab_bundle_stage2: "colab_bundle_stage2.zip"
+colab_bundle_stage3: "colab_bundle_stage3.zip"
 
 # Resize target (must be divisible by 32 for U-Net / SegFormer)
 image_width:  640
@@ -17,9 +25,22 @@ image_height: 352
 lane_mask_width: 8
 
 # Subset sizes
-n_train: 4200
-n_val:   900
-n_test:  900
+n_train: 3000
+n_val:   150
+n_test:  150
+
+# Stages 2 & 3 parameters
+n_new_total: 7000
+n_stage2_new: 3500
+n_stage3_new: 3500
+n_replay_stage2: 500
+n_replay_stage3: 500
+
+# Exclusion list of manifests whose images must NOT be reused in new stages
+exclude_manifests:
+  - "data/manifests/train_stage1.csv"
+  - "data/manifests/val.csv"
+  - "data/manifests/test.csv"
 
 # Conditions and their balance fractions (must sum to 1.0)
 conditions:

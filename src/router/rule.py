@@ -81,3 +81,34 @@ class RuleRouter:
                 return action
 
         return self.default_action
+
+    def route_with_reason(self, qv: QualityVector) -> tuple[str, str]:
+        """Return (action, reason_description) for the given quality vector.
+
+        Parameters
+        ----------
+        qv : QualityVector
+
+        Returns
+        -------
+        tuple[str, str]
+            (action_name, explanation_of_which_rule_fired)
+        """
+        qv_dict = qv.to_dict()
+
+        for rule in self.rules:
+            conditions = rule.get("conditions", [])
+            action = rule["action"]
+
+            if all(
+                _OPS[op](qv_dict[field], threshold)
+                for field, op, threshold in conditions
+            ):
+                cond_strs = [
+                    f"{field} ({qv_dict[field]:.2f}) {op} {threshold}"
+                    for field, op, threshold in conditions
+                ]
+                reason = f"Rule fired: {' and '.join(cond_strs)}"
+                return action, reason
+
+        return self.default_action, f"Default action: no rules fired (default: {self.default_action})"

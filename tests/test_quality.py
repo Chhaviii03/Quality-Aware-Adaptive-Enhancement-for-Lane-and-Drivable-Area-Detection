@@ -23,6 +23,9 @@ class TestComputeQuality:
         img = _make()
         qv  = compute_quality(img)
         assert isinstance(qv, QualityVector)
+        assert isinstance(qv, dict)
+        assert qv["brightness"] == qv.brightness
+        assert "haze" in qv
 
     def test_all_fields_finite(self):
         img = _make()

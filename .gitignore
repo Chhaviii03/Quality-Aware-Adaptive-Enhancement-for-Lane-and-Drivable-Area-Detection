@@ -7,6 +7,9 @@
 data/images/
 data/raw/
 data/bdd100k/
+data/processed/
+bdd_subset/
+*.zip
 
 # Keep manifests
 !data/manifests/*.csv

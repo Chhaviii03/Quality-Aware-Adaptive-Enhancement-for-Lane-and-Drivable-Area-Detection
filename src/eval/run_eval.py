@@ -46,8 +46,8 @@ from src.eval.bootstrap import aggregate_by_condition, bootstrap_ci
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Unified evaluation harness.")
-    p.add_argument("--model",        required=True,  choices=["unet", "segformer", "hough"],
-                   help="Model / detector to evaluate")
+    p.add_argument("--model",        default="hough", choices=["unet", "segformer", "hough"],
+                   help="Model / detector to evaluate (default: hough)")
     p.add_argument("--config",       default=None,   help="Path to model YAML config")
     p.add_argument("--enhance_cfg",  default="configs/enhance.yaml")
     p.add_argument("--router_cfg",   default="configs/router.yaml")
@@ -55,6 +55,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--enhancement",  default="none",
                    help=f"One of {ENHANCEMENT_NAMES} or 'adaptive'")
     p.add_argument("--split",        default="val", choices=["train", "val", "test"])
+    p.add_argument("--limit",        type=int, default=None, help="Limit number of frames evaluated")
     p.add_argument("--debug",        action="store_true", help="Run on first 20 frames")
     p.add_argument("--save_stages",  action="store_true", help="Save intermediate pipeline stages")
     p.add_argument("--stage_dir",    default="results/figures/stages", help="Directory for stages")
@@ -166,7 +167,10 @@ def run_eval(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame]:
             f"Manifest {manifest_path} is empty. Run scripts/make_sample_data.py or scripts/make_subset.sh first."
         )
 
-    if args.debug:
+    if args.limit is not None:
+        df_manifest = df_manifest.head(args.limit)
+        print(f"[LIMIT] Running on {len(df_manifest)} frames.")
+    elif args.debug:
         df_manifest = df_manifest.head(20)
         print(f"[DEBUG] Running on {len(df_manifest)} frames.")
 
