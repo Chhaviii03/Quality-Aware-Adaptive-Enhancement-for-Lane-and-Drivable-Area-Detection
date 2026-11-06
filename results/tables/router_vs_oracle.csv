@@ -1,0 +1,11 @@
+Metric,Value
+Total Frames Evaluated,150
+Oracle Agreement (%),26.67%
+Mean Regret (IoU),0.028112
+Router Matches Count,40 / 150
+Action Choice: none,Router: 78 | Oracle: 38
+Action Choice: clahe,Router: 0 | Oracle: 23
+Action Choice: gamma,Router: 66 | Oracle: 30
+Action Choice: dehaze,Router: 6 | Oracle: 28
+Action Choice: denoise,Router: 0 | Oracle: 20
+Action Choice: denoise_clahe,Router: 0 | Oracle: 11

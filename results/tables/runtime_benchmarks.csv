@@ -1,0 +1,8 @@
+Stage,Latency (ms),Throughput (FPS)
+1. Quality Scoring,41.52,24.1
+2. Rule Router,0.05,18579.3
+3. DIP Enhancement,2.30,433.8
+4. Deep U-Net Segmentation,639.74,1.6
+5. Classical Hough Lanes,10.38,96.4
+6. Region Analysis,14.78,67.7
+TOTAL PIPELINE (CPU),708.80,1.41

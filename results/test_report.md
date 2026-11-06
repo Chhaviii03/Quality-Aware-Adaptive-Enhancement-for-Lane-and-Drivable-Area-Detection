@@ -166,3 +166,70 @@ During the final audit, two conflicting sets of test metrics were investigated:
    A conservative quality router prevents widespread catastrophic degradation by defaulting to `none` on 51.3% of frames. In dark conditions with low road contrast, gamma enhancement achieves substantial gains (+0.086 mIoU). However, global thresholding lacks local spatial semantics, causing occasional false triggers.
 3. **Reproducibility & Rigour**:
    All 11 audit checks, 87 unit tests, and held-out test evaluations executed strictly without data leakage, CPU training, or metric alterations.
+
+---
+
+## 7. Execution of Standalone Evaluation Scripts & Benchmarks
+
+To ensure complete modularity and independent reproduction outside the interactive Streamlit dashboard, three standalone entrypoint scripts were created in `scripts/`:
+
+1. `scripts/evaluate.py`: Evaluates baseline and adaptive router segmentation on any split (`train`, `val`, `test`), computing both dataset-level (micro) and frame-level (macro) mIoU and Dice, writing dashboard-compatible result tables (`summary_test_metrics.csv` and `test_predictions.csv`).
+2. `scripts/evaluate_router.py`: Runs exhaustive multi-enhancement sweeps across manifests to evaluate rule-based router choices against an empirical upper-bound oracle, outputting `router_vs_oracle.csv`.
+3. `scripts/benchmark_runtime.py`: Measures isolated, per-stage CPU latencies across quality estimation, decision routing, DIP image enhancement, deep U-Net segmentation, classical Hough lane detection, and morphological region analysis, outputting `runtime_benchmarks.csv`.
+
+### 7.1 Script Verification & Sanity Check (Validation Split)
+- **Script**: `python scripts/evaluate.py --split val --ckpt results/checkpoints/unet/unet_drivable_best.pt`
+- **Stored Checkpoint Metric** (`results/checkpoints/unet/unet_drivable_best.pt`):
+  - Stored `val_miou`: `0.890667`
+  - Stored `val_dice`: `0.900886`
+- **Locally Computed Local Val Metric** (150 frames, Baseline):
+  - Local `val_miou`: `0.890675`
+  - Local `val_dice`: `0.900895`
+- **Numerical Difference**:
+  - $\Delta\text{mIoU} = +0.000008 \ll 0.01$ (**PASS**)
+  - $\Delta\text{Dice} = +0.000009 \ll 0.01$ (**PASS**)
+
+### 7.2 Full Validation Router vs. Oracle Benchmark
+- **Script**: `python scripts/evaluate_router.py --manifest data/manifests/val.csv`
+- **Dataset**: Full 150 validation frames in `data/manifests/val.csv`.
+- **Router Agreement with Oracle**: **40 / 150 frames (26.67%)**.
+- **Mean Regret**: **0.028112 IoU**.
+- **Per-Enhancement Distribution**:
+  - `none`: Router = 78, Oracle = 38
+  - `gamma`: Router = 66, Oracle = 30
+  - `dehaze`: Router = 6, Oracle = 28
+  - `clahe`: Router = 0, Oracle = 23
+  - `denoise`: Router = 0, Oracle = 20
+  - `denoise_clahe`: Router = 0, Oracle = 11
+
+### 7.3 Final Held-Out Test Evaluation (Run Exactly Once)
+- **Script**: `python scripts/evaluate.py --split test --ckpt results/checkpoints/unet/unet_drivable_best.pt`
+- **Dataset**: Full 150 test frames in `data/manifests/test.csv`.
+- **Baseline (`none`)**:
+  - Dataset mIoU: **0.879534**
+  - Dataset Dice: **0.891932**
+  - Drivable IoU: 0.804943, Background IoU: 0.954124
+- **Adaptive Router**:
+  - Dataset mIoU: **0.872949**
+  - Dataset Dice: **0.885678**
+  - Drivable IoU: 0.794813, Background IoU: 0.951086
+- **Files Written**: `results/tables/summary_test_metrics.csv` and `results/tables/test_predictions.csv`.
+
+### 7.4 Runtime Benchmark (CPU Only)
+- **Script**: `python scripts/benchmark_runtime.py --manifest data/manifests/val.csv --num_frames 30`
+- **Environment**: Intel CPU, Windows 11, PyTorch CPU mode.
+- **Stage-by-Stage Latency Breakdown**:
+  1. Quality Metric Extraction (5-D vector): **41.52 ms**
+  2. Rule-Based Quality Router: **0.05 ms**
+  3. DIP Enhancement (Adaptive branch): **2.30 ms**
+  4. ResNet-18 U-Net Drivable Segmentation: **639.74 ms**
+  5. Classical Hough Lane Detection: **10.38 ms**
+  6. Connected Components & Region Filtering: **14.78 ms**
+- **Total Pipeline Latency**: **708.80 ms**
+- **Effective Pipeline Throughput**: **1.41 FPS** (CPU)
+
+### 7.5 Synthetic PSNR/SSIM Reference Verification
+- **Reference Image**: Verified via `scripts/eval_psnr_ssim.py` (lines 77-128). The metric computes PSNR and SSIM against the **clean, original BGR frame** (`ref_bgr`), sized $640\times 352$ uint8, before synthetic degradation.
+- **Explanation of ~7 dB PSNR for Fog and Low-Light**:
+  - Under Koschmieder optical fog, uniform atmospheric airlight ($A \approx 230$) is blended over the entire horizon and midground, creating large pixel-level $L_2$ differences against clean daytime imagery.
+  - Under synthetic low light, images undergo a severe 75% luminance drop ($0.25 \times I^{1.8}$) with Poisson sensor shot noise, shifting average pixel intensity from ~120 to ~20. The large mean squared error (MSE) against the pristine daytime reference mathematically bounds PSNR near $10 \log_{10}(255^2 / \text{MSE}) \approx 7\text{ dB}$.
